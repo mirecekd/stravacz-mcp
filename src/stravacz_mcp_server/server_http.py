@@ -8,7 +8,7 @@ import argparse
 import asyncio
 import logging
 import sys
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from fastmcp import FastMCP
 from .strava_client import AsyncStravaClient
 
@@ -70,12 +70,12 @@ async def is_ordered(meal_id: int) -> Dict[str, Any]:
 
 
 @server.tool()
-async def order_meals(*meal_ids: int) -> Dict[str, Any]:
+async def order_meals(meal_ids: List[int]) -> Dict[str, Any]:
     """
     Objednání jídel podle meal_id
     
     Args:
-        meal_ids: ID jídel k objednání (může být více hodnot oddělených čárkou)
+        meal_ids: Seznam ID jídel k objednání
         
     Returns:
         Dict s výsledkem objednávky
