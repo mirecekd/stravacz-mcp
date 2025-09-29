@@ -9,16 +9,16 @@ LABEL version="1.0.0"
 # Pracovní adresář
 WORKDIR /app
 
-# Kopírování requirements
+# Kopírování requirements a zdrojových kódů
 COPY pyproject.toml ./
+COPY src/ ./src/
 
 # Instalace závislostí
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir build && \
     pip install --no-cache-dir .
 
-# Kopírování zdrojových kódů
-COPY src/ ./src/
+# Kopírování entry pointu
 COPY main.py ./
 
 # Vytvoření non-root uživatele
