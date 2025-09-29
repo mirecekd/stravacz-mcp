@@ -26,7 +26,7 @@ classifiers = [
 keywords = ["mcp", "strava.cz", "canteen", "jidelna", "api"]
 
 dependencies = [
-    "strava-cz>=1.0.0",
+    "strava-cz>=0.1.3",
     "fastmcp>=0.9.0",
     "aiohttp>=3.8.0",
     "asyncio",
