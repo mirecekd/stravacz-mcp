@@ -1,0 +1,35 @@
+# Dockerfile pro HTTP streaming verzi Stravacz MCP serveru
+FROM python:3.11-alpine
+
+# Metadata
+LABEL maintainer="mirecekd"
+LABEL description="Stravacz MCP Server - HTTP streaming verze"
+LABEL version="1.0.0"
+
+# Pracovní adresář
+WORKDIR /app
+
+# Kopírování requirements
+COPY pyproject.toml ./
+
+# Instalace závislostí
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir build && \
+    pip install --no-cache-dir .
+
+# Kopírování zdrojových kódů
+COPY src/ ./src/
+COPY main_http.py ./
+
+# Vytvoření non-root uživatele
+RUN adduser -D -s /bin/sh appuser
+USER appuser
+
+# Expose port pro HTTP streaming
+EXPOSE 8809
+
+# Entrypoint pro HTTP streaming verzi
+ENTRYPOINT ["python", "main_http.py"]
+
+# Výchozí argumenty (mohou být přepsány)
+CMD ["--help"]

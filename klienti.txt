@@ -1,0 +1,95 @@
+API pro strava.cz - Přehled dostupných řešení
+=================================================
+
+## Oficiální API
+
+❌ NEEXISTUJE oficiální API pro strava.cz
+- Endpoint /api vrací 404 chybu
+- Strava.cz nemá veřejně dostupnou API dokumentaci
+
+## Neoficiální API řešení (web scraping)
+
+### 1. strava-cz-python (Doporučené)
+------------------------------------
+Autor: jsem-nerad
+GitHub: https://github.com/jsem-nerad/strava-cz-python
+PyPI: https://pypi.org/project/strava-cz/
+Typ: Python knihovna
+Licence: GPL-3.0
+
+Instalace:
+pip install strava-cz
+
+Funkce:
+- ✅ Přihlášení/odhlášení
+- ✅ Vypsání jídelníčku s filtrací
+- ✅ Objednávání jídel podle ID
+- ✅ Kontrola objednávek
+- ✅ Tisk menu
+
+Příklad použití:
+```python
+from strava_cz import StravaCZ
+
+strava = StravaCZ(
+    username="your.username", 
+    password="YourPassword123", 
+    canteen_number="your canteen number"
+)
+
+# Přihlášení a výpis informací o uživateli
+print(strava.user)
+
+# Získání jídelníčku
+print(strava.get_menu())
+
+# Kontrola objednávky
+print(strava.is_ordered(4))
+
+# Objednání jídel
+strava.order_meals(3, 6)
+
+# Odhlášení
+strava.logout()
+```
+
+Stav: Aktivně vyvíjené (poslední update září 2025)
+
+### 2. strava-cli
+-----------------
+Autor: StuckInVim-dev
+GitHub: https://github.com/StuckInVim-dev/strava-cli
+Typ: CLI nástroj v Pythonu
+
+Funkce:
+- ✅ Zobrazení aktuálně vybraných jídel
+- ✅ Změna vybraného jídla pro konkrétní den
+- ✅ Zrušení objednávek
+- ✅ Detekce uzamčených jídel (pozdě na objednání)
+- ✅ Detekce svátků a nedostupných dnů
+
+Stav: Méně aktivní (poslední update říjen 2024)
+
+## Technické detaily
+
+Princip fungování:
+- Všechna řešení používají web scraping pomocí HTTP requests
+- Simulují přihlášení přes webový formulář
+- Parsují HTML odpovědi pro získání dat
+- Odesílají POST požadavky pro objednávky
+
+Omezení:
+⚠️  Závislost na struktuře HTML webu strava.cz
+⚠️  Mohou přestat fungovat při změnách webu
+⚠️  Nejsou oficiálně podporovaná
+⚠️  Doporučuje se neautomatizovat masivní množství požadavků
+
+## Doporučení
+
+Pro vytvoření vlastního API klienta:
+1. Použijte knihovnu strava-cz-python jako základ
+2. Prostudujte notes/ složku v repositáři pro detaily o fungování
+3. Implementujte error handling pro změny na webu
+4. Respektujte server load - nepošílejte příliš mnoho požadavků
+
+Alternativně můžete kontaktovat provozovatele strava.cz s žádostí o oficiální API.

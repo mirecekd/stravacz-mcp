@@ -1,0 +1,88 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: mirecekd/stravacz-mcp
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        variant: [cli, http, proxy]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch,suffix=-${{ matrix.variant }}
+          type=ref,event=pr,suffix=-${{ matrix.variant }}
+          type=raw,value=latest-${{ matrix.variant }},enable={{is_default_branch}}
+          type=semver,pattern={{version}}-${{ matrix.variant }}
+          type=semver,pattern={{major}}.{{minor}}-${{ matrix.variant }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.${{ matrix.variant }}
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  summary:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+    - name: Build Summary
+      run: |
+        echo "🎉 Docker images built and pushed successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📦 **Built images:**" >> $GITHUB_STEP_SUMMARY
+        echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-cli\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-http\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-proxy\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🚀 **Usage examples:**" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "# CLI version" >> $GITHUB_STEP_SUMMARY
+        echo "docker run --rm -i ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-cli --user USER --password PASS --canteen_number NUM" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# HTTP streaming version" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -p 8809:8809 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-http --user USER --password PASS --canteen_number NUM" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# HTTP proxy version" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -p 8805:8805 -e STRAVACZ_USER=USER -e STRAVACZ_PASSWORD=PASS -e STRAVACZ_CANTEEN_NUMBER=NUM ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-proxy" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

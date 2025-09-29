@@ -1,0 +1,32 @@
+# Dockerfile pro CLI (stdio) verzi Stravacz MCP serveru
+FROM python:3.11-alpine
+
+# Metadata
+LABEL maintainer="mirecekd"
+LABEL description="Stravacz MCP Server - CLI (stdio) verze"
+LABEL version="1.0.0"
+
+# Pracovní adresář
+WORKDIR /app
+
+# Kopírování requirements
+COPY pyproject.toml ./
+
+# Instalace závislostí
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir build && \
+    pip install --no-cache-dir .
+
+# Kopírování zdrojových kódů
+COPY src/ ./src/
+COPY main.py ./
+
+# Vytvoření non-root uživatele
+RUN adduser -D -s /bin/sh appuser
+USER appuser
+
+# Entrypoint pro CLI verzi
+ENTRYPOINT ["python", "main.py"]
+
+# Výchozí argumenty (mohou být přepsány)
+CMD ["--help"]

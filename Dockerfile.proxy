@@ -1,0 +1,38 @@
+# Dockerfile pro HTTP proxy verzi Stravacz MCP serveru (pomocí mcp-proxy)
+FROM python:3.11-alpine
+
+# Metadata
+LABEL maintainer="mirecekd"
+LABEL description="Stravacz MCP Server - HTTP proxy verze přes mcp-proxy"
+LABEL version="1.0.0"
+
+# Pracovní adresář
+WORKDIR /app
+
+# Kopírování requirements
+COPY pyproject.toml ./
+
+# Instalace závislostí včetně mcp-proxy
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir build && \
+    pip install --no-cache-dir . && \
+    pip install --no-cache-dir mcp-proxy
+
+# Kopírování zdrojových kódů
+COPY src/ ./src/
+COPY main.py ./
+
+# Vytvoření non-root uživatele
+RUN adduser -D -s /bin/sh appuser
+USER appuser
+
+# Expose port pro HTTP proxy
+EXPOSE 8805
+
+# Environment variables pro konfiguraci
+ENV STRAVACZ_USER=""
+ENV STRAVACZ_PASSWORD=""
+ENV STRAVACZ_CANTEEN_NUMBER=""
+
+# Entrypoint skript pro spuštění přes mcp-proxy
+ENTRYPOINT ["sh", "-c", "mcp-proxy --port 8805 --host 0.0.0.0 -- python main.py --user \"$STRAVACZ_USER\" --password \"$STRAVACZ_PASSWORD\" --canteen_number \"$STRAVACZ_CANTEEN_NUMBER\""]
