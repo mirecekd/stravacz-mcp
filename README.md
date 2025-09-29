@@ -8,6 +8,7 @@ MCP (Model Context Protocol) server pro **strava.cz** - systém a webová/mobiln
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/mirecekdg)
 
 </div>
+
 ## ⚠️ Upozornění
 
 **!! K používání tohoto projektu je potřeba trošku umět s dockerem/pythonem a vědět, jak funguje připojení MCP k danému LLM klientu !!**
@@ -168,9 +169,9 @@ Contributions jsou vítané! Prosím vytvořte issue nebo pull request.
 ## 🔗 Související projekty
 
 - [strava-cz-python](https://github.com/jsem-nerad/strava-cz-python) - Původní Python knihovna pro strava.cz
-- [bakalari-mcp](https://github.com/mirecekd/bakalari-mcp) - Podobný MCP server pro Bakaláři
+- [bakalari-mcp](https://github.com/mirecekd/bakalari-mcp) - Další můj MCP server - pro Bakaláři API
 - [strava-cli](https://github.com/StuckInVim-dev/strava-cli) - CLI nástroj pro strava.cz
 
 ---
 
-**Vytvořeno s ❤️ pro českou MCP komunitu**
+**Vytvořeno s ❤️ pro českou AI/MCP komunitu**
