@@ -167,12 +167,24 @@ class AsyncStravaClient:
         try:
             logger.info(f"Formátování menu (soup: {include_soup}, empty: {include_empty})")
             
-            # Volání print_menu v thread poolu
-            formatted_menu = await asyncio.to_thread(
-                self._strava.print_menu,
-                include_soup=include_soup,
-                include_empty=include_empty
-            )
+            # Získáme menu a zformátujeme ho sami, protože print_menu nevrací string
+            menu = await asyncio.to_thread(self._strava.get_menu)
+            
+            # Formátování menu jako string
+            formatted_lines = []
+            for day_menu in menu:
+                date = day_menu.get("date")
+                meals = day_menu.get("meals", [])
+                
+                formatted_lines.append(f"Date: {date}")
+                for meal in meals:
+                    name = meal.get("name")
+                    meal_type = meal.get("type")
+                    ordered = "[Ordered]" if meal.get("ordered") else "[Not Ordered]"
+                    formatted_lines.append(f"  - {name} ({meal_type}) {ordered}")
+                formatted_lines.append("")  # Prázdný řádek mezi dny
+            
+            formatted_menu = "\n".join(formatted_lines)
             
             return {
                 "status": "success",
@@ -200,14 +212,27 @@ class AsyncStravaClient:
         try:
             logger.info("Získávání informací o uživateli")
             
-            # Přístup k user atributu v thread poolu
-            user_info = await asyncio.to_thread(lambda: self._strava.user)
+            # Přístup k user atributu v thread poolu a extrakce serializovatelných dat
+            user_obj = await asyncio.to_thread(lambda: self._strava.user)
+            
+            # Extrakce serializovatelných atributů z User objektu
+            user_data = {}
+            if hasattr(user_obj, '__dict__'):
+                for key, value in user_obj.__dict__.items():
+                    # Zahrnout pouze základní datové typy
+                    if isinstance(value, (str, int, float, bool, type(None))):
+                        user_data[key] = value
+                    elif isinstance(value, (list, dict)):
+                        user_data[key] = str(value)  # Převést na string pro bezpečnost
+                    else:
+                        user_data[key] = str(value)  # Převést složitější objekty na string
             
             return {
                 "status": "success",
-                "user": user_info,
+                "user_data": user_data,
                 "username": self.username,
-                "canteen_number": self.canteen_number
+                "canteen_number": self.canteen_number,
+                "logged_in": self._logged_in
             }
             
         except Exception as e:

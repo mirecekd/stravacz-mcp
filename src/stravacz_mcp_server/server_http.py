@@ -176,9 +176,43 @@ async def run_http_server(username: str, password: str, canteen_number: str, por
         logger.info(f"Inicializace Strava klienta pro uživatele: {username}")
         strava_client = AsyncStravaClient(username, password, canteen_number)
         
-        # Spuštění HTTP streaming serveru
+        # Spuštění HTTP streaming serveru s manuální kontrolou event loop
         logger.info(f"Spouštění HTTP streaming MCP serveru na portu {port}...")
-        await server.run(transport="http", port=port, host="0.0.0.0")
+        
+        # Zkusíme jiný přístup - použijeme create_task místo await
+        try:
+            # Získáme aktuální loop
+            loop = asyncio.get_running_loop()
+            logger.info("Používáme existující event loop pro server.run()")
+            
+            # Vytvoříme task pro server.run()
+            server_task = loop.create_task(server.run(transport="http", port=port, host="0.0.0.0"))
+            
+            # Čekáme na dokončení
+            await server_task
+            
+        except RuntimeError as e:
+            if "already running" in str(e).lower():
+                logger.error("Event loop konflikt - zkušíme alternativní přístup")
+                # Zkusíme spustit server v novém vlákně
+                import threading
+                import concurrent.futures
+                
+                def run_server_sync():
+                    # Vytvoříme nový event loop v novém vlákně
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(server.run(transport="http", port=port, host="0.0.0.0"))
+                    finally:
+                        new_loop.close()
+                
+                # Spustíme v thread pool
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_server_sync)
+                    await asyncio.get_event_loop().run_in_executor(None, future.result)
+            else:
+                raise
         
     except KeyboardInterrupt:
         logger.info("HTTP server zastaven uživatelem")
@@ -256,9 +290,18 @@ def main():
     logger.info(f"HTTP host: {args.host}")
     logger.info(f"Log level: {args.log_level}")
     
+    # Importujeme nest_asyncio na začátku a aplikujeme preventivně
     try:
-        # Spuštění HTTP serveru
+        import nest_asyncio
+        nest_asyncio.apply()
+        logger.info("nest_asyncio byl aplikován preventivně")
+    except ImportError:
+        logger.warning("nest_asyncio není dostupný, pokračujeme bez něj")
+    
+    try:
+        logger.info("Spouštíme HTTP server...")
         asyncio.run(run_http_server(args.user, args.password, args.canteen_number, args.port))
+        
     except KeyboardInterrupt:
         logger.info("\nHTTP Server zastaven")
         sys.exit(0)
